@@ -1,6 +1,11 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
+
+html, body {
+  font-family: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
 
 @custom-variant dark (&:is(.dark *));
 
