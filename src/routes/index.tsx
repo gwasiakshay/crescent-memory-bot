@@ -48,11 +48,14 @@ function statusColor(status: string) {
 function Index() {
   const [input, setInput] = useState("");
   const [passcode, setPasscode] = useState("");
+  const [passcodeDraft, setPasscodeDraft] = useState("");
+  const [isUnlocked, setIsUnlocked] = useState(false);
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingIdx, setLoadingIdx] = useState(0);
   const [response, setResponse] = useState<AskResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lockError, setLockError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -82,7 +85,11 @@ function Index() {
         signal: ctrl.signal,
       });
       if (res.status === 401) {
-        setError("Invalid demo passcode. Please check the access code.");
+        setIsUnlocked(false);
+        setPasscode("");
+        setPasscodeDraft("");
+        setResponse(null);
+        setLockError("Invalid demo passcode. Please enter the access code again.");
         return;
       }
       if (!res.ok) throw new Error(`Request failed (${res.status})`);
@@ -108,6 +115,24 @@ function Index() {
     ask(input);
   }
 
+  function handleUnlock(e: React.FormEvent) {
+    e.preventDefault();
+    if (!passcodeDraft.trim()) return;
+    setPasscode(passcodeDraft);
+    setIsUnlocked(true);
+    setLockError(null);
+  }
+
+  function handleChangePasscode() {
+    setIsUnlocked(false);
+    setPasscode("");
+    setPasscodeDraft("");
+    setResponse(null);
+    setError(null);
+    setActivePreset(null);
+    setInput("");
+  }
+
   return (
     <div className="min-h-screen bg-[oklch(0.985_0.002_247)] text-foreground">
       <div className="mx-auto max-w-2xl px-5 py-14 sm:py-20">
@@ -123,109 +148,139 @@ function Index() {
           </p>
         </div>
 
-        <div className="mt-8 flex flex-col gap-2">
-          {PRESETS.map((p) => {
-            const active = activePreset === p;
-            return (
-              <button
-                key={p}
-                onClick={() => handlePreset(p)}
-                disabled={loading}
-                className={`w-full rounded-lg border px-4 py-3 text-left text-sm transition-colors disabled:opacity-60 ${
-                  active
-                    ? "border-foreground/30 bg-white text-foreground shadow-sm"
-                    : "border-border bg-secondary text-foreground hover:bg-white"
-                }`}
-              >
-                {p}
-              </button>
-            );
-          })}
-        </div>
-
-        <hr className="my-8 border-border" />
-
-        <div className="mb-3">
-          <label className="mb-1 block text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            Demo passcode
-          </label>
-          <input
-            type="password"
-            value={passcode}
-            onChange={(e) => setPasscode(e.target.value)}
-            placeholder="Enter access code"
-            className="w-full rounded-lg border border-border bg-white px-4 py-2.5 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/5"
-          />
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              setActivePreset(null);
-            }}
-            placeholder="Ask a question…"
-            className="flex-1 rounded-lg border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/5"
-          />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="rounded-lg bg-foreground px-5 py-3 text-sm font-medium text-background transition hover:opacity-90 disabled:opacity-50"
+        {!isUnlocked ? (
+          <form
+            onSubmit={handleUnlock}
+            className="mx-auto mt-16 flex max-w-sm flex-col items-stretch gap-3"
           >
-            Ask
-          </button>
-        </form>
-
-        {loading && (
-          <div className="mt-6 flex items-center gap-3 rounded-lg border border-border bg-white px-4 py-4 text-sm text-muted-foreground">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-foreground/60" />
-            <span key={loadingIdx} className="animate-in fade-in">
-              {LOADING_MESSAGES[loadingIdx]}
-            </span>
-          </div>
-        )}
-
-        {error && !loading && (
-          <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        {response && !loading && (
-          <div className="mt-6 rounded-xl border border-border bg-white p-5 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              Answer
-            </p>
-            <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
-              {response.answer}
-            </p>
-
-            <hr className="my-5 border-border" />
-
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              Sources
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {response.sources?.length ? (
-                response.sources.map((s, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs text-foreground"
-                    title={`${s.status} · ${(s.similarity * 100).toFixed(0)}%`}
+            <label className="text-center text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              Demo Passcode
+            </label>
+            <input
+              type="password"
+              value={passcodeDraft}
+              onChange={(e) => setPasscodeDraft(e.target.value)}
+              placeholder="Enter access code"
+              autoFocus
+              className="w-full rounded-lg border border-border bg-white px-4 py-3 text-center text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/5"
+            />
+            <button
+              type="submit"
+              disabled={!passcodeDraft.trim()}
+              className="rounded-lg bg-foreground px-5 py-3 text-sm font-medium text-background transition hover:opacity-90 disabled:opacity-50"
+            >
+              Enter
+            </button>
+            {lockError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
+                {lockError}
+              </div>
+            )}
+          </form>
+        ) : (
+          <>
+            <div className="mt-8 flex flex-col gap-2">
+              {PRESETS.map((p) => {
+                const active = activePreset === p;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => handlePreset(p)}
+                    disabled={loading}
+                    className={`w-full rounded-lg border px-4 py-3 text-left text-sm transition-colors disabled:opacity-60 ${
+                      active
+                        ? "border-foreground/30 bg-white text-foreground shadow-sm"
+                        : "border-border bg-secondary text-foreground hover:bg-white"
+                    }`}
                   >
-                    <span className={`h-2 w-2 rounded-full ${statusColor(s.status)}`} />
-                    <span className="font-medium">{s.platform}</span>
-                    <span className="text-muted-foreground">·</span>
-                    <span className="text-muted-foreground">{s.job}</span>
-                  </span>
-                ))
-              ) : (
-                <span className="text-xs text-muted-foreground">No sources returned.</span>
-              )}
+                    {p}
+                  </button>
+                );
+              })}
             </div>
-          </div>
+
+            <hr className="my-8 border-border" />
+
+            <form onSubmit={handleSubmit} className="flex gap-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  setActivePreset(null);
+                }}
+                placeholder="Ask a question…"
+                className="flex-1 rounded-lg border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/5"
+              />
+              <button
+                type="submit"
+                disabled={loading || !input.trim()}
+                className="rounded-lg bg-foreground px-5 py-3 text-sm font-medium text-background transition hover:opacity-90 disabled:opacity-50"
+              >
+                Ask
+              </button>
+            </form>
+
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={handleChangePasscode}
+                className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Change passcode
+              </button>
+            </div>
+
+            {loading && (
+              <div className="mt-6 flex items-center gap-3 rounded-lg border border-border bg-white px-4 py-4 text-sm text-muted-foreground">
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-foreground/60" />
+                <span key={loadingIdx} className="animate-in fade-in">
+                  {LOADING_MESSAGES[loadingIdx]}
+                </span>
+              </div>
+            )}
+
+            {error && !loading && (
+              <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            {response && !loading && (
+              <div className="mt-6 rounded-xl border border-border bg-white p-5 shadow-sm">
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                  Answer
+                </p>
+                <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
+                  {response.answer}
+                </p>
+
+                <hr className="my-5 border-border" />
+
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                  Sources
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {response.sources?.length ? (
+                    response.sources.map((s, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs text-foreground"
+                        title={`${s.status} · ${(s.similarity * 100).toFixed(0)}%`}
+                      >
+                        <span className={`h-2 w-2 rounded-full ${statusColor(s.status)}`} />
+                        <span className="font-medium">{s.platform}</span>
+                        <span className="text-muted-foreground">·</span>
+                        <span className="text-muted-foreground">{s.job}</span>
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-muted-foreground">No sources returned.</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
