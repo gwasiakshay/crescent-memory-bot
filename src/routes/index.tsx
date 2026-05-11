@@ -47,6 +47,7 @@ function statusColor(status: string) {
 
 function Index() {
   const [input, setInput] = useState("");
+  const [passcode, setPasscode] = useState("");
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingIdx, setLoadingIdx] = useState(0);
@@ -77,9 +78,13 @@ function Index() {
       const res = await fetch("https://crescent-rag.onrender.com/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q }),
+        body: JSON.stringify({ question: q, passcode }),
         signal: ctrl.signal,
       });
+      if (res.status === 401) {
+        setError("Invalid demo passcode. Please check the access code.");
+        return;
+      }
       if (!res.ok) throw new Error(`Request failed (${res.status})`);
       const data = (await res.json()) as AskResponse;
       setResponse(data);
@@ -139,6 +144,19 @@ function Index() {
         </div>
 
         <hr className="my-8 border-border" />
+
+        <div className="mb-3">
+          <label className="mb-1 block text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Demo passcode
+          </label>
+          <input
+            type="password"
+            value={passcode}
+            onChange={(e) => setPasscode(e.target.value)}
+            placeholder="Enter access code"
+            className="w-full rounded-lg border border-border bg-white px-4 py-2.5 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/5"
+          />
+        </div>
 
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
