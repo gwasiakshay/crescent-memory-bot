@@ -194,10 +194,10 @@ function Index() {
             />
             <button
               type="submit"
-              disabled={!passcodeDraft.trim()}
+              disabled={!passcodeDraft.trim() || verifying}
               className="rounded-lg bg-foreground px-5 py-3 text-sm font-medium text-background transition hover:opacity-90 disabled:opacity-50"
             >
-              Enter
+              {verifying ? "Verifying…" : "Enter"}
             </button>
             {lockError && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
