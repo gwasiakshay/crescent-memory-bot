@@ -115,12 +115,40 @@ function Index() {
     ask(input);
   }
 
-  function handleUnlock(e: React.FormEvent) {
+  const [verifying, setVerifying] = useState(false);
+
+  async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
-    if (!passcodeDraft.trim()) return;
-    setPasscode(passcodeDraft);
-    setIsUnlocked(true);
+    const code = passcodeDraft.trim();
+    if (!code || verifying) return;
+    setVerifying(true);
     setLockError(null);
+    try {
+      const res = await fetch("https://crescent-rag.onrender.com/verify-passcode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode: code }),
+      });
+      if (res.status === 401) {
+        setLockError("Invalid demo passcode. Please enter the access code again.");
+        return;
+      }
+      if (!res.ok) {
+        setLockError("Couldn't reach the memory service. Please try again.");
+        return;
+      }
+      const data = (await res.json()) as { valid?: boolean };
+      if (!data.valid) {
+        setLockError("Invalid demo passcode. Please enter the access code again.");
+        return;
+      }
+      setPasscode(code);
+      setIsUnlocked(true);
+    } catch {
+      setLockError("Couldn't reach the memory service. Please try again.");
+    } finally {
+      setVerifying(false);
+    }
   }
 
   function handleChangePasscode() {
