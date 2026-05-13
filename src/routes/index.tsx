@@ -84,29 +84,34 @@ function Index() {
     const q = question.trim();
     if (!q || loading) return;
     setError(null);
-    setResponse(null);
     setLoading(true);
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
+    const historyForRequest = history;
     try {
       const res = await fetch("https://crescent-rag.onrender.com/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q, passcode }),
+        body: JSON.stringify({ question: q, passcode, history: historyForRequest }),
         signal: ctrl.signal,
       });
       if (res.status === 401) {
         setIsUnlocked(false);
         setPasscode("");
         setPasscodeDraft("");
-        setResponse(null);
+        setHistory([]);
         setLockError("Invalid demo passcode. Please enter the access code again.");
         return;
       }
       if (!res.ok) throw new Error(`Request failed (${res.status})`);
       const data = (await res.json()) as AskResponse;
-      setResponse(data);
+      setHistory((h) => [
+        ...h,
+        { role: "user", content: q },
+        { role: "assistant", content: data.answer, sources: data.sources },
+      ]);
+      setInput("");
     } catch (e: any) {
       if (e.name !== "AbortError")
         setError("Couldn't reach the memory service. Please try again.");
