@@ -172,7 +172,7 @@ function Index() {
     setIsUnlocked(false);
     setPasscode("");
     setPasscodeDraft("");
-    setResponse(null);
+    setHistory([]);
     setError(null);
     setActivePreset(null);
     setInput("");
