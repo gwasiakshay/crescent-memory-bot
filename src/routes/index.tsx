@@ -36,6 +36,12 @@ type Source = {
 
 type AskResponse = { answer: string; sources: Source[] };
 
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+  sources?: Source[];
+};
+
 function statusColor(status: string) {
   const s = status?.toLowerCase();
   if (s === "live") return "bg-emerald-500";
