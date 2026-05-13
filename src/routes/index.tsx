@@ -63,6 +63,7 @@ function Index() {
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [lockError, setLockError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const threadRef = useRef<HTMLDivElement | null>(null);
 
@@ -133,8 +134,6 @@ function Index() {
     ask(input);
   }
 
-  const [verifying, setVerifying] = useState(false);
-
   async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
     const code = passcodeDraft.trim();
@@ -181,7 +180,7 @@ function Index() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[oklch(0.985_0.002_247)] text-foreground">
-      <div className="mx-auto flex w-full max-w-[760px] flex-1 flex-col px-5 py-8 sm:py-12">
+      <div className="mx-auto flex w-full max-w-[760px] flex-1 flex-col px-5 py-8 sm:py-10">
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
             Crescent Group · AI Memory
@@ -197,7 +196,7 @@ function Index() {
         {!isUnlocked ? (
           <form
             onSubmit={handleUnlock}
-            className="mx-auto mt-16 flex max-w-sm flex-col items-stretch gap-3"
+            className="mx-auto mt-16 flex w-full max-w-sm flex-col items-stretch gap-3"
           >
             <label className="text-center text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Demo Passcode
@@ -224,29 +223,7 @@ function Index() {
             )}
           </form>
         ) : (
-          <>
-            <div className="mt-8 flex flex-col gap-2">
-              {PRESETS.map((p) => {
-                const active = activePreset === p;
-                return (
-                  <button
-                    key={p}
-                    onClick={() => handlePreset(p)}
-                    disabled={loading}
-                    className={`w-full rounded-lg border px-4 py-3 text-left text-sm transition-colors disabled:opacity-60 ${
-                      active
-                        ? "border-foreground/30 bg-white text-foreground shadow-sm"
-                        : "border-border bg-secondary text-foreground hover:bg-white"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                );
-              })}
-            </div>
-
-            <hr className="my-8 border-border" />
-
+          <div className="mt-6 flex min-h-0 flex-1 flex-col">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Conversation
@@ -263,23 +240,27 @@ function Index() {
 
             <div
               ref={threadRef}
-              className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-[oklch(0.985_0.002_247)] p-4"
+              className="flex flex-col overflow-y-auto rounded-xl border border-border bg-[oklch(0.985_0.002_247)] p-4"
+              style={{ height: "calc(100vh - 280px)" }}
             >
-              {history.length === 0 && !loading && (
-                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+              {history.length === 0 && !loading && !error && (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                   Ask a question to get started.
                 </div>
               )}
 
-              {history.map((m, idx) =>
-                m.role === "user" ? (
-                  <div key={idx} className="flex justify-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-secondary px-4 py-2.5 text-sm text-foreground">
+              {history.map((m, idx) => {
+                const isLast = idx === history.length - 1;
+                const gapClass =
+                  m.role === "assistant" && !isLast ? "mb-4" : m.role === "user" ? "mb-3" : "";
+                return m.role === "user" ? (
+                  <div key={idx} className={`flex justify-end ${gapClass}`}>
+                    <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-secondary px-4 py-3 text-sm text-foreground">
                       {m.content}
                     </div>
                   </div>
                 ) : (
-                  <div key={idx} className="flex flex-col items-start gap-2">
+                  <div key={idx} className={`flex flex-col items-start gap-2 ${gapClass}`}>
                     <div className="prose-chat max-w-[90%] rounded-2xl rounded-bl-sm border border-border bg-white px-4 py-3 text-[15px] leading-relaxed text-foreground shadow-sm">
                       <ReactMarkdown>{m.content}</ReactMarkdown>
                     </div>
@@ -300,11 +281,11 @@ function Index() {
                       </div>
                     )}
                   </div>
-                ),
-              )}
+                );
+              })}
 
               {loading && (
-                <div className="flex items-center gap-3 rounded-lg border border-border bg-white px-4 py-3 text-sm text-muted-foreground">
+                <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-white px-4 py-3 text-sm text-muted-foreground">
                   <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-foreground/60" />
                   <span key={loadingIdx} className="animate-in fade-in">
                     {LOADING_MESSAGES[loadingIdx]}
@@ -313,13 +294,33 @@ function Index() {
               )}
 
               {error && !loading && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {error}
                 </div>
               )}
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-4 flex gap-2">
+            <div className="mt-4 flex flex-col gap-2">
+              {PRESETS.map((p) => {
+                const active = activePreset === p;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => handlePreset(p)}
+                    disabled={loading}
+                    className={`w-full rounded-lg border px-4 py-2.5 text-left text-sm transition-colors disabled:opacity-60 ${
+                      active
+                        ? "border-foreground/30 bg-white text-foreground shadow-sm"
+                        : "border-border bg-secondary text-foreground hover:bg-white"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+
+            <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
               <input
                 type="text"
                 value={input}
@@ -339,7 +340,7 @@ function Index() {
               </button>
             </form>
 
-            <div className="mt-3 flex justify-end">
+            <div className="mt-2 flex justify-end">
               <button
                 type="button"
                 onClick={handleChangePasscode}
@@ -348,8 +349,7 @@ function Index() {
                 Change passcode
               </button>
             </div>
-
-          </>
+          </div>
         )}
       </div>
     </div>
