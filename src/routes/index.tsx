@@ -59,10 +59,16 @@ function Index() {
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingIdx, setLoadingIdx] = useState(0);
-  const [response, setResponse] = useState<AskResponse | null>(null);
+  const [history, setHistory] = useState<ChatMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [lockError, setLockError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const threadRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = threadRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [history, loading]);
 
   useEffect(() => {
     if (!loading) return;
