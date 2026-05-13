@@ -280,8 +280,8 @@ function Index() {
                   </div>
                 ) : (
                   <div key={idx} className="flex flex-col items-start gap-2">
-                    <div className="max-w-[90%] rounded-2xl rounded-bl-sm border border-border bg-white px-4 py-3 text-[15px] leading-relaxed text-foreground shadow-sm">
-                      <p className="whitespace-pre-wrap">{m.content}</p>
+                    <div className="prose-chat max-w-[90%] rounded-2xl rounded-bl-sm border border-border bg-white px-4 py-3 text-[15px] leading-relaxed text-foreground shadow-sm">
+                      <ReactMarkdown>{m.content}</ReactMarkdown>
                     </div>
                     {m.sources && m.sources.length > 0 && (
                       <div className="flex max-w-[90%] flex-wrap gap-2">
