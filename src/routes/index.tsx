@@ -246,7 +246,79 @@ function Index() {
 
             <hr className="my-8 border-border" />
 
-            <form onSubmit={handleSubmit} className="flex gap-2">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                Conversation
+              </p>
+              <button
+                type="button"
+                onClick={() => setHistory([])}
+                disabled={history.length === 0}
+                className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-40 disabled:no-underline"
+              >
+                Clear chat
+              </button>
+            </div>
+
+            <div
+              ref={threadRef}
+              className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-[oklch(0.985_0.002_247)] p-4"
+            >
+              {history.length === 0 && !loading && (
+                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+                  Ask a question to get started.
+                </div>
+              )}
+
+              {history.map((m, idx) =>
+                m.role === "user" ? (
+                  <div key={idx} className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-secondary px-4 py-2.5 text-sm text-foreground">
+                      {m.content}
+                    </div>
+                  </div>
+                ) : (
+                  <div key={idx} className="flex flex-col items-start gap-2">
+                    <div className="max-w-[90%] rounded-2xl rounded-bl-sm border border-border bg-white px-4 py-3 text-[15px] leading-relaxed text-foreground shadow-sm">
+                      <p className="whitespace-pre-wrap">{m.content}</p>
+                    </div>
+                    {m.sources && m.sources.length > 0 && (
+                      <div className="flex max-w-[90%] flex-wrap gap-2">
+                        {m.sources.map((s, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-xs text-foreground"
+                            title={`${s.status} · ${(s.similarity * 100).toFixed(0)}%`}
+                          >
+                            <span className={`h-2 w-2 rounded-full ${statusColor(s.status)}`} />
+                            <span className="font-medium">{s.platform}</span>
+                            <span className="text-muted-foreground">·</span>
+                            <span className="text-muted-foreground">{s.job}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ),
+              )}
+
+              {loading && (
+                <div className="flex items-center gap-3 rounded-lg border border-border bg-white px-4 py-3 text-sm text-muted-foreground">
+                  <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-foreground/60" />
+                  <span key={loadingIdx} className="animate-in fade-in">
+                    {LOADING_MESSAGES[loadingIdx]}
+                  </span>
+                </div>
+              )}
+
+              {error && !loading && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleSubmit} className="mt-4 flex gap-2">
               <input
                 type="text"
                 value={input}
@@ -276,55 +348,6 @@ function Index() {
               </button>
             </div>
 
-            {loading && (
-              <div className="mt-6 flex items-center gap-3 rounded-lg border border-border bg-white px-4 py-4 text-sm text-muted-foreground">
-                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-foreground/60" />
-                <span key={loadingIdx} className="animate-in fade-in">
-                  {LOADING_MESSAGES[loadingIdx]}
-                </span>
-              </div>
-            )}
-
-            {error && !loading && (
-              <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
-
-            {response && !loading && (
-              <div className="mt-6 rounded-xl border border-border bg-white p-5 shadow-sm">
-                <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                  Answer
-                </p>
-                <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
-                  {response.answer}
-                </p>
-
-                <hr className="my-5 border-border" />
-
-                <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                  Sources
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {response.sources?.length ? (
-                    response.sources.map((s, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs text-foreground"
-                        title={`${s.status} · ${(s.similarity * 100).toFixed(0)}%`}
-                      >
-                        <span className={`h-2 w-2 rounded-full ${statusColor(s.status)}`} />
-                        <span className="font-medium">{s.platform}</span>
-                        <span className="text-muted-foreground">·</span>
-                        <span className="text-muted-foreground">{s.job}</span>
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-xs text-muted-foreground">No sources returned.</span>
-                  )}
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>
