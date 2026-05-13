@@ -180,8 +180,8 @@ function Index() {
   }
 
   return (
-    <div className="min-h-screen bg-[oklch(0.985_0.002_247)] text-foreground">
-      <div className="mx-auto max-w-2xl px-5 py-14 sm:py-20">
+    <div className="flex min-h-screen flex-col bg-[oklch(0.985_0.002_247)] text-foreground">
+      <div className="mx-auto flex w-full max-w-[760px] flex-1 flex-col px-5 py-8 sm:py-12">
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
             Crescent Group · AI Memory
