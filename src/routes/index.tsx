@@ -110,7 +110,9 @@ function Index() {
 
   async function fetchConversations() {
     try {
-      const res = await fetch(`${API_BASE}/conversations`);
+      const res = await fetch(`${API_BASE}/conversations`, {
+        headers: { "x-demo-passcode": passcode },
+      });
       if (!res.ok) return;
       const data = (await res.json()) as Conversation[];
       setConversations(data);
@@ -127,7 +129,7 @@ function Index() {
     try {
       const res = await fetch(`${API_BASE}/conversations`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-demo-passcode": passcode },
         body: JSON.stringify({ passcode }),
       });
       if (!res.ok) return null;
@@ -154,7 +156,9 @@ function Index() {
     setInput("");
     setActiveConvId(id);
     try {
-      const res = await fetch(`${API_BASE}/conversations/${id}/messages`);
+      const res = await fetch(`${API_BASE}/conversations/${id}/messages`, {
+        headers: { "x-demo-passcode": passcode },
+      });
       if (!res.ok) throw new Error("failed");
       const data = (await res.json()) as ServerMessage[];
       setHistory(
@@ -188,7 +192,7 @@ function Index() {
     try {
       const res = await fetch(`${API_BASE}/ask`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-demo-passcode": passcode },
         body: JSON.stringify({
           question: q,
           passcode,
