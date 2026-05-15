@@ -153,6 +153,45 @@ function Index() {
     setActiveConvId(id);
   }
 
+  async function renameConversation(id: string, title: string) {
+    const newTitle = title.trim();
+    if (!newTitle) {
+      setRenamingId(null);
+      return;
+    }
+    setConversations((cs) => cs.map((c) => (c.id === id ? { ...c, title: newTitle } : c)));
+    setRenamingId(null);
+    try {
+      await fetch(`${API_BASE}/conversations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-demo-passcode": passcode },
+        body: JSON.stringify({ title: newTitle }),
+      });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function deleteConversation(id: string) {
+    setMenuOpenId(null);
+    setConversations((cs) => cs.filter((c) => c.id !== id));
+    if (id === activeConvId) {
+      setActiveConvId(null);
+      setHistory([]);
+      setError(null);
+      setActivePreset(null);
+      setInput("");
+    }
+    try {
+      await fetch(`${API_BASE}/conversations/${id}`, {
+        method: "DELETE",
+        headers: { "x-demo-passcode": passcode },
+      });
+    } catch {
+      /* ignore */
+    }
+  }
+
   async function loadConversation(id: string) {
     setError(null);
     setActivePreset(null);
