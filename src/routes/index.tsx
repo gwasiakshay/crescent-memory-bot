@@ -403,23 +403,87 @@ function Index() {
           )}
           {conversations.map((c) => {
             const active = c.id === activeConvId;
+            const isRenaming = renamingId === c.id;
+            const isMenuOpen = menuOpenId === c.id;
             return (
-              <button
+              <div
                 key={c.id}
-                onClick={() => loadConversation(c.id)}
-                className={`mb-1 flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left text-sm transition ${
-                  active
-                    ? "bg-secondary text-foreground"
-                    : "text-foreground hover:bg-secondary/60"
+                className={`group relative mb-1 flex items-center rounded-lg pr-1 transition ${
+                  active ? "bg-secondary text-foreground" : "text-foreground hover:bg-secondary/60"
                 }`}
               >
-                <span className="line-clamp-1 w-full text-sm">
-                  {c.title || "Untitled"}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {formatDate(c.created_at)}
-                </span>
-              </button>
+                {isRenaming ? (
+                  <input
+                    autoFocus
+                    value={renameDraft}
+                    onChange={(e) => setRenameDraft(e.target.value)}
+                    onBlur={() => renameConversation(c.id, renameDraft)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") renameConversation(c.id, renameDraft);
+                      if (e.key === "Escape") setRenamingId(null);
+                    }}
+                    className="m-1 flex-1 rounded border border-border bg-white px-2 py-1.5 text-sm outline-none focus:border-foreground/40"
+                  />
+                ) : (
+                  <button
+                    onClick={() => loadConversation(c.id)}
+                    className="flex flex-1 flex-col items-start gap-0.5 overflow-hidden rounded-lg px-3 py-2 text-left text-sm"
+                  >
+                    <span className="line-clamp-1 w-full text-sm">
+                      {c.title || "Untitled"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(c.created_at)}
+                    </span>
+                  </button>
+                )}
+                {!isRenaming && (
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpenId(isMenuOpen ? null : c.id);
+                      }}
+                      className={`rounded p-1 text-muted-foreground transition hover:bg-white hover:text-foreground ${
+                        isMenuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      }`}
+                      aria-label="Conversation options"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="5" cy="12" r="1.6" />
+                        <circle cx="12" cy="12" r="1.6" />
+                        <circle cx="19" cy="12" r="1.6" />
+                      </svg>
+                    </button>
+                    {isMenuOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setMenuOpenId(null)}
+                        />
+                        <div className="absolute right-0 top-full z-20 mt-1 w-32 overflow-hidden rounded-md border border-border bg-white shadow-md">
+                          <button
+                            onClick={() => {
+                              setRenameDraft(c.title || "");
+                              setRenamingId(c.id);
+                              setMenuOpenId(null);
+                            }}
+                            className="block w-full px-3 py-2 text-left text-sm hover:bg-secondary"
+                          >
+                            Rename
+                          </button>
+                          <button
+                            onClick={() => deleteConversation(c.id)}
+                            className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
